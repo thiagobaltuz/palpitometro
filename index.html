@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Palpitômetro Supabase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4 font-sans">
+  <div class="max-w-md mx-auto bg-white rounded-xl shadow p-6 space-y-4">
+    <h2 class="text-2xl font-bold text-center text-lime-600">PALPITÔMETRO</h2>
+    <div id="teams" class="text-center text-lg font-semibold">Flamengo vs Palmeiras</div>
+    <div class="flex justify-around">
+      <button id="btnA" class="bg-gray-800 text-white px-4 py-2 rounded">Time A</button>
+      <button id="btnE" class="bg-gray-800 text-white px-4 py-2 rounded">Empate</button>
+      <button id="btnB" class="bg-gray-800 text-white px-4 py-2 rounded">Time B</button>
+    </div>
+    <div class="space-y-2 mt-4">
+      <div><div class="text-sm">Time A</div><div class="w-full bg-gray-300 rounded"><div id="bar-Time-A" class="h-3 bg-lime-500 rounded" style="width:0%"></div></div></div>
+      <div><div class="text-sm">Empate</div><div class="w-full bg-gray-300 rounded"><div id="bar-Empate" class="h-3 bg-lime-500 rounded" style="width:0%"></div></div></div>
+      <div><div class="text-sm">Time B</div><div class="w-full bg-gray-300 rounded"><div id="bar-Time-B" class="h-3 bg-lime-500 rounded" style="width:0%"></div></div></div>
+    </div>
+  </div>
+  <script type="module" src="./js/votacao.js"></script>
+</body>
+</html>
