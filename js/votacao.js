@@ -2,7 +2,14 @@
 // js/votacao.js
 import { supabase } from './supabase.js'
 
-const jogoId = '77e8e307-9fe4-4e6c-b75b-e61edcb661c1' // exemplo
+const params = new URLSearchParams(window.location.search)
+const jogoId = params.get('jogo_id')
+
+if (!jogoId) {
+  alert("Jogo não identificado na URL. Use ?jogo_id=SEU_ID_AQUI")
+  throw new Error("Parâmetro jogo_id ausente.")
+}
+
 const votedKey = `voto-${jogoId}`
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -37,7 +44,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       .eq('jogo_id', jogoId)
 
     const counts = { 'Time A': 0, 'Empate': 0, 'Time B': 0 }
-    data.forEach(v => counts[v.opcao]++)
+
+    if (data) {
+      data.forEach(v => {
+        if (v.opcao && counts[v.opcao] !== undefined) {
+          counts[v.opcao]++
+        }
+      })
+    }
 
     const total = Object.values(counts).reduce((a, b) => a + b, 0)
     for (const opt in counts) {
