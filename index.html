@@ -1,26 +1,85 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Palpitômetro Supabase</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PréJogo.Bet - Palpitômetro</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-4 font-sans">
-  <div class="max-w-md mx-auto bg-white rounded-xl shadow p-6 space-y-4">
-    <h2 class="text-2xl font-bold text-center text-lime-600">PALPITÔMETRO</h2>
-    <div id="teams" class="text-center text-lg font-semibold">Flamengo vs Palmeiras</div>
-    <div class="flex justify-around">
+<body class="bg-gray-100 antialiased font-sans p-4">
+  <div class="max-w-sm mx-auto bg-white rounded-xl shadow space-y-4 p-4">
+    <div class="flex justify-between items-center mb-2">
+      <button id="prev" class="text-gray-600">&lt;</button>
+      <h2 class="text-lime-600 font-bold">PALPITÔMETRO</h2>
+      <button id="next" class="text-gray-600">&gt;</button>
+    </div>
+    <div id="teams" class="text-center font-semibold text-lg mb-2">-- vs --</div>
+    <div id="info" class="text-center text-sm text-gray-500 mb-4">--/--/---- • --:-- • Local</div>
+    <div class="flex justify-around mb-4">
       <button id="btnA" class="bg-gray-800 text-white px-4 py-2 rounded">Time A</button>
       <button id="btnE" class="bg-gray-800 text-white px-4 py-2 rounded">Empate</button>
       <button id="btnB" class="bg-gray-800 text-white px-4 py-2 rounded">Time B</button>
     </div>
-    <div class="space-y-2 mt-4">
-      <div><div class="text-sm">Time A</div><div class="w-full bg-gray-300 rounded"><div id="bar-Time-A" class="h-3 bg-lime-500 rounded" style="width:0%"></div></div></div>
-      <div><div class="text-sm">Empate</div><div class="w-full bg-gray-300 rounded"><div id="bar-Empate" class="h-3 bg-lime-500 rounded" style="width:0%"></div></div></div>
-      <div><div class="text-sm">Time B</div><div class="w-full bg-gray-300 rounded"><div id="bar-Time-B" class="h-3 bg-lime-500 rounded" style="width:0%"></div></div></div>
+    <p class="text-lime-600 font-semibold mb-2">ESCOLHA DA COMUNIDADE</p>
+    <div id="bar-container" class="space-y-2 mb-4">
+      <div class="flex items-center"><span id="pctA" class="w-12">0%</span><div class="flex-1 bg-gray-200 rounded h-2"><div id="barA" class="bg-lime-500 h-2 rounded" style="width:0"></div></div></div>
+      <div class="flex items-center"><span id="pctE" class="w-12">0%</span><div class="flex-1 bg-gray-200 rounded h-2"><div id="barE" class="bg-lime-500 h-2 rounded" style="width:0"></div></div></div>
+      <div class="flex items-center"><span id="pctB" class="w-12">0%</span><div class="flex-1 bg-gray-200 rounded h-2"><div id="barB" class="bg-lime-500 h-2 rounded" style="width:0"></div></div></div>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <button id="btnVote" class="bg-lime-500 text-white font-bold py-2 rounded">APOSTAR AGORA</button>
+      <button id="btnAnalysis" class="bg-lime-500 text-white font-bold py-2 rounded">VER ANÁLISES</button>
     </div>
   </div>
-  <script type="module" src="./js/votacao.js"></script>
+
+<script>
+  const supabaseUrl = "https://ihqieqpynnamsfayczhv.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlocWllcXB5bm5hbXNmYXljemh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2NTYwODIsImV4cCI6MjA2MDIzMjA4Mn0.84brtyH5RH07QhJ5bHslFvReMxqYJW9a9C8jbheP654";
+  let jogos = [], idx = 0;
+
+  async function fetchJogos() {
+    const res = await fetch(`${supabaseUrl}/rest/v1/jogos?select=id,data_jogo,horario_jogo,local_jogo,time_casa,time_fora`, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
+    });
+    jogos = await res.json();
+    render();
+  }
+
+  async function fetchVotos() {
+    if (!jogos[idx]) return;
+    const jogoId = jogos[idx].id;
+    const res = await fetch(`${supabaseUrl}/rest/v1/votos_palpitometro?select=palpite_votado&jogo_id=eq.${jogoId}`, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
+    });
+    const votos = await res.json();
+    const total = votos.length || 1;
+    const counts = { 'Time A':0,'Empate':0,'Time B':0 };
+    votos.forEach(v=>counts[v.palpite_votado]++);
+    ['A','E','B'].forEach(k=>{
+      const key = k==='A'?'Time A':k==='E'?'Empate':'Time B';
+      const pct = Math.round((counts[key]/total)*100);
+      document.getElementById(`pct${k}`).innerText = pct+'%';
+      document.getElementById(`bar${k}`).style.width = pct+'%';
+    });
+  }
+
+  function render() {
+    if (!jogos[idx]) return;
+    const j = jogos[idx];
+    document.getElementById('teams').innerText = `${j.time_casa} vs ${j.time_fora}`;
+    document.getElementById('info').innerText = `${new Date(j.data_jogo).toLocaleDateString()} • ${j.horario_jogo} • ${j.local_jogo}`;
+    document.getElementById('btnA').innerText = j.time_casa;
+    document.getElementById('btnE').innerText = 'Empate';
+    document.getElementById('btnB').innerText = j.time_fora;
+    fetchVotos();
+  }
+
+  document.getElementById('prev').onclick = () => { idx=(idx-1+jogos.length)%jogos.length; render(); };
+  document.getElementById('next').onclick = () => { idx=(idx+1)%jogos.length; render(); };
+  document.getElementById('btnVote').onclick = () => alert('Vote: '+jogos[idx].time_casa);
+  document.getElementById('btnAnalysis').onclick = () => window.location.href = `analise.html?jogo_id=${jogos[idx].id}`;
+
+  fetchJogos();
+</script>
 </body>
 </html>

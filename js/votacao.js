@@ -1,21 +1,14 @@
-
-// js/votacao.js
 import { supabase } from './supabase.js'
 
 const params = new URLSearchParams(window.location.search)
 const jogoId = params.get('jogo_id')
-
-if (!jogoId) {
-  alert("Jogo não identificado na URL. Use ?jogo_id=SEU_ID_AQUI")
-  throw new Error("Parâmetro jogo_id ausente.")
-}
-
-const votedKey = `voto-${jogoId}`
+const votedKey = jogoId ? `voto-${jogoId}` : null
 
 document.addEventListener('DOMContentLoaded', async () => {
   const btnA = document.getElementById('btnA')
   const btnE = document.getElementById('btnE')
   const btnB = document.getElementById('btnB')
+  const aviso = document.getElementById('aviso')
 
   const bars = {
     'Time A': document.getElementById('bar-Time-A'),
@@ -38,21 +31,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const updateBars = async () => {
-    const { data, error } = await supabase
+    if (!jogoId) return
+    const { data } = await supabase
       .from('votos_palpitometro')
-      .select('opcao', { count: 'exact', head: false })
+      .select('opcao')
       .eq('jogo_id', jogoId)
 
     const counts = { 'Time A': 0, 'Empate': 0, 'Time B': 0 }
-
-    if (data) {
-      data.forEach(v => {
-        if (v.opcao && counts[v.opcao] !== undefined) {
-          counts[v.opcao]++
-        }
-      })
-    }
-
+    data?.forEach(v => counts[v.opcao] !== undefined && counts[v.opcao]++)
     const total = Object.values(counts).reduce((a, b) => a + b, 0)
     for (const opt in counts) {
       const percent = total ? (counts[opt] / total) * 100 : 0
@@ -60,13 +46,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  if (localStorage.getItem(votedKey)) {
+  if (!jogoId) {
     disableButtons()
+    if (aviso) aviso.innerText = "⚠️ Jogo não identificado na URL. Adicione ?jogo_id=SEU_ID para votar."
+  } else {
+    if (localStorage.getItem(votedKey)) disableButtons()
+    await updateBars()
+    btnA.onclick = () => voteAndUpdate('Time A')
+    btnE.onclick = () => voteAndUpdate('Empate')
+    btnB.onclick = () => voteAndUpdate('Time B')
   }
-
-  await updateBars()
-
-  btnA.onclick = () => voteAndUpdate('Time A')
-  btnE.onclick = () => voteAndUpdate('Empate')
-  btnB.onclick = () => voteAndUpdate('Time B')
 })
